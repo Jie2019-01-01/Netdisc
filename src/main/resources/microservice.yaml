@@ -1,0 +1,16 @@
+APPLICATION_ID: start.servicecomb.io
+service_description:
+  name: NetDiscService
+  version: 0.0.1
+  environment: development
+servicecomb:
+  handler:
+    chain:
+      Provider:
+        default: qps-flowcontrol-provider,bizkeeper-provider
+  rest:
+    address: 0.0.0.0:8781
+  service:
+    registry:
+      address: http://127.0.0.1:30100
+      autodiscovery: true

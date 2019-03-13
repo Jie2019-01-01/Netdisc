@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.matryoshka.microservice.dfs.mapper.TagMapper">
+
+	<!-- 添加tag标签 -->
+	<insert id="addTag" parameterType="tagBean">
+		insert into tag values(null,#{tagName},null,now(),#{color})
+	</insert>
+	
+	<!-- 查询所有tag标签 -->
+	<select id="queryTags" resultType="tagBean">
+		select * from tag
+	</select>
+	
+	<!-- 避免同一文档下的tag重复,设置tag之前先进行一步删除操作 -->
+	<delete id="deleteSetTag" parameterType="int">
+		delete from rel_tag_doc where fid=#{fid} and tagid=#{tagid}
+	</delete>
+	<!-- 为文档设置tag -->
+	<insert id="setTag" parameterType="int">
+		insert into rel_tag_doc values(null,#{fid},#{tagid})
+	</insert>
+	
+	<!-- 通过tag查询文档数据,过滤查询 -->
+	<select id="queryDocByTag" resultType="docBean">
+		select d.*, COUNT(d.fid) aa from  docmanage d,rel_tag_doc r 
+	where 
+		r.fid=d.fid and tagid in
+		<foreach collection="tagids" item="id" index='index' open="(" separator="," close=")">  
+			#{id} 
+		</foreach>
+		GROUP BY d.fid having aa=#{num};
+	</select>
+	
+	<!-- 修改tag属性 -->
+	<update id="updateTagProperty" parameterType="tagBean">
+		update tag 
+		<trim prefix="set" suffixOverrides=",">
+			<if test="tagName!=null">
+				tagName=#{tagName},
+			</if>
+			<if test="color!=null">
+				color=#{color},
+			</if>
+		</trim>
+		where tagId=#{tagId}
+	</update>
+	
+	<!-- 删除tag -->
+	<delete id="deleteTag" parameterType="int">
+		delete from tag where tagId=#{tagId}
+	</delete>
+	
+	<!-- 查询某个文档下的tag -->
+	<select id="queryFileTags" parameterType="int" resultType="tagBean">
+		select t.* from docmanage d,tag t,rel_tag_doc r where d.fid=r.fid and t.tagId=r.tagId and d.fid=#{fid}
+	</select>
+</mapper>

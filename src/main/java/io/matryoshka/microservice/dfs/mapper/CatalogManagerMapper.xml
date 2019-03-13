@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 将 mapper.xml 中的namespace 设置为 mapper.java 的全限定名。 -->
+<mapper namespace="io.matryoshka.microservice.dfs.mapper.CatalogManagerMapper">
+
+			<!-- 新增目录的操作 -->
+	<insert id="newDirectory" parameterType="catalogBean" useGeneratedKeys="true" keyProperty="cid" keyColumn="cid">
+		insert into catalog(
+			cname,createuser,createdate,flag,supDirectory,
+			`rank`,mapperName,ishide,path,cpath,color,`range`) 
+		values(
+			#{cname},#{createuser},now(),#{flag},#{supDirectory},#{rank},
+			#{mapperName},#{ishide},#{path},#{cpath},#{color},#{range})
+	</insert>
+
+			<!-- 条件查询 -->
+	<select id="queryByCondition" parameterType="catalogBean"
+		resultType="catalogBean">
+		select * from catalog
+		<where>
+			<if test="cid!=0 and cid!=null">
+				cid=#{cid}
+			</if>
+			<if test="cname!=null and cname!=''">
+				cname=#{cname}
+			</if>
+			<if test="supDirectory!=0 and supDirectory!=null">
+				supDirectory=#{supDirectory}
+			</if>
+		</where>
+	</select>		
+	
+				<!-- 通过目录id查询数据 -->
+	<select id="queryCatalogByCid" parameterType="int" resultType="catalogBean">
+		select * from catalog where cid=#{cid} and flag=0
+	</select>	
+
+			<!-- 移动目录 -->
+	<update id="moveCatalog">
+		update catalog set supDirectory=#{supDirectory},`rank`=#{rank},path=#{path} where cid=#{cid}
+	</update>
+	<update id="updateSubCatalog" parameterType="catalogBean">
+		update catalog set `rank`=#{rank},path=#{path} where cid=#{cid}
+	</update>				
+			
+			<!-- 通过目录查询操作 -->
+	<select id="queryByCatalogName" parameterType="string" resultType="catalogBean">
+		select * from catalog where cname=#{catalogName} and flag=0
+	</select>
+	
+			<!-- 根据目录名称id该目录以及下面子目录在数据库中的数据 -->
+	<delete id="delCatalogByCids" parameterType="java.util.List">
+		delete from 
+			catalog 
+		where cid in(
+		<foreach collection="list" item="cid" index="index" separator=",">
+			#{cid}
+		</foreach>
+		)
+	</delete>
+	<delete id="delDocByCids" parameterType="java.util.List">
+		delete from 
+			docmanage 
+		where cid in(
+		<foreach collection="list" item="cid" index="index" separator=",">
+			#{cid}
+		</foreach>
+		)
+	</delete>
+	
+		<!-- 目录重命名 -->
+	<update id="catalogRename">
+		update catalog set cname=#{newName} where cid=#{cid}
+	</update>
+	
+		<!-- 权限删除 -->
+	<delete id="deleteAuthorization" parameterType="urcBean">
+		delete from user_role_catalog where roleid=#{roleid} and cid=#{cid}
+		<if test="userid != 0">
+			and userid=#{userid}
+		</if>
+	</delete>
+		<!-- 用户针对指定目录进行授权 -->
+	<insert id="userAuthorizationForDir" parameterType="urcBean">
+		insert into user_role_catalog values(#{userid},#{roleid},#{cid})
+	</insert>
+		<!-- 通过userid查询该用户下对每个目录(包括公有)有什么角色 -->
+	<select id="queryCatalogAndRoleByUserid" parameterType="int" resultType="urcBean">
+		select roleid,cid from user_role_catalog where userid=#{userid} or userid=0
+	</select>
+	
+		<!-- 根据目录的类型,查询哪些用户拥有该目录何种权限 -->	
+	<select id="queryDirPermissions" parameterType="urcBean" resultType="int">
+		select roleid from user_role_catalog where cid=#{cid}
+		<if test="userid!=0">
+			and userid=#{userid}
+		</if>
+	</select>
+	
+		<!-- 全局搜索(模糊查询目录) -->
+	<select id="queryCatalogLike" resultType="catalogBean" parameterType="string">
+		select * from catalog where flag=0 and cname like #{keyword}
+	</select>
+		<!-- 全局搜索(模糊查询文档) -->
+	<select id="queryDocLike" resultType="docBean" parameterType="string">
+		select * from docmanage where flag=0 and fname like #{keyword}
+	</select>
+	
+		<!-- 修改文件夹颜色 -->
+	<update id="modifyFolderColor">
+		update catalog set color=#{color} where cid=#{cid}
+	</update>
+	
+	<!-- 查询目录表中所有数据, 封装成DTO对象 -->
+	<select id="queryCatalogs" resultType="io.matryoshka.microservice.dfs.bean.CatalogDTO">
+		select cid,cname,createdate,supdirectory,rank,color,`range` from catalog
+	</select>
+</mapper>

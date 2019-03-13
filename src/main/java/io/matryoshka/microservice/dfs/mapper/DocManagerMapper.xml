@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.matryoshka.microservice.dfs.mapper.DocManagerMapper">
+				<!-- 新建文档,与目录相关联 -->
+	<insert id="newDocument" parameterType="docBean" useGeneratedKeys="true" keyProperty="fid" keyColumn="fid">
+		insert into docmanage(fid,fname,createuser,createdate,cid,flag,type,size)
+		values(null,#{fname},#{createuser},#{createdate},#{cid},#{flag},#{type},#{size})
+	</insert>			
+				
+				<!-- 通过目录id查询数据 -->
+	<select id="queryCatalogByCid" parameterType="int" resultType="docBean">
+		select * from catalog where cid=#{cid}
+	</select>	
+				
+				<!-- 查询文件名是否重复 -->
+	<select id="isFileRepeat" parameterType="string" resultType="int">
+		select count(fname) from docmanage where fname=#{fname} and cid=(select cid from catalog where cname=#{cname})
+	</select>			
+				
+				<!-- 通过目录id和文档名称删除对应的数据 -->
+	<delete id="delDocmanage">
+		delete from docmanage where fid=#{fid} and cid=#{cid}
+	</delete>
+				
+				<!-- 通过fid去查询文档名 -->
+	<select id="getDocBean" parameterType="int" resultType="docBean">
+		select * from docmanage where fid=#{fid}
+	</select>
+				
+				<!-- 查询指定目录下的文档信息 -->
+	<select id="queryDocuments" parameterType="int" resultType="docBean">
+		select * from docmanage where cid=#{cid}
+	</select>
+				
+				<!-- 移动文件 -->
+	<update id="moveFile" parameterType="int">
+		update docmanage set cid=#{cid} where fid=#{fid}
+	</update>	
+	
+				<!-- 文件重命名 -->
+	<update id="renameFile">
+		update docmanage set fname=#{renameFile} where fid=#{fid}
+	</update>		
+</mapper>
